@@ -1,0 +1,169 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+<title>移動軌跡</title>
+</head><body>
+<h1>移動軌跡</h1>
+<script type="module" src="https://js.sabae.cc/csv-map.js"></script>
+<csv-map id=csvmap src="https://code4fukui.github.io/mac-address/00_M5_facility list.csv"></csv-map>
+
+<select id=selpos></select>
+<select id=seluser></select>
+
+<script type="module">
+import { CSV } from "https://js.sabae.cc/CSV.js";
+import { ArrayUtil } from "https://js.sabae.cc/ArrayUtil.js";
+import { cr } from "https://js.sabae.cc/cr.js";
+
+const base = "https://code4fukui.github.io/mac-address/";
+const fnspot = base + "00_M5_facility list.csv";
+const fnuser = base + "user.csv";
+
+const spots = await CSV.fetchJSON(fnspot);
+const users = await CSV.fetchJSON(fnuser);
+
+spots.forEach(i => {
+  const opt = cr("option", selpos);
+  opt.textContent = `No. ${i["No."]} ${i.エリア} ${i["施設名(日本語)"]} (${i.業種})`;
+  opt.value = i["No."];
+});
+
+for (const user of users) {
+  if (user.pos.split(",").length == 1) continue;
+  const opt = cr("option", seluser);
+  opt.textContent = user.userid + " 訪問箇所数:" + user.poslen + " ユーザー情報: " + user.user;
+  opt.value = user.userid;
+}
+
+const getMap = async (map) => {
+  if (map.map) return map.map;
+  return new Promise(resolve => {
+    const f = () => {
+      if (map.map) {
+        resolve(map.map);
+        return;
+      }
+      setTimeout(f, 100);
+    };
+    setTimeout(f, 100);
+  });
+};
+
+const map = await getMap(csvmap);
+//console.log(map);
+//console.log(csvmap);
+
+//spots.forEach(i => i.cnt = 0);
+const cnt = {};
+for (const user of users) {
+  //const pos = user.pos.split(",");
+  const pos = ArrayUtil.toUnique(user.pos.split(","));
+  pos.forEach(i => {
+    if (cnt[i] === undefined) {
+      cnt[i] = 1;
+    } else {
+      cnt[i]++;
+    }
+  });
+}
+console.log(cnt);
+
+const getSpot = (id) => {
+  const spot = spots.find(i => i["No."] == id);
+  if (!spot) throw new Error("not found spot:" + id);
+  return spot;
+};
+
+for (const id in cnt) {
+  const c = cnt[id];
+  const spot = getSpot(id);
+  //spot["ユニーク訪問件数"] = c;
+  const r = Math.sqrt(c) * 50;
+  const circle = L.circle([spot.緯度, spot.経度], {
+    color: "red",
+    radius: r, // radius m
+  }).addTo(map); 
+}
+
+const route = {};
+for (const user of users) {
+  const pos = user.pos.split(",");
+  if (pos.length == 1) continue;
+  let from = pos[0];
+  for (let i = 1; i < pos.length; i++) {
+    const to = pos[i];
+    if (route[from] === undefined) {
+      route[from] = {};
+    }
+    if (route[from][to] === undefined) {
+      route[from][to] = 1;
+    } else {
+      route[from][to]++;
+    }
+    from = to;
+  }
+}
+console.log(route);
+
+const calcMiddlePoint = (p1, p2) => {
+  const mid = (n1, n2) => (parseFloat(n1) + parseFloat(n2)) / 2;
+  const res = {};
+  res.緯度 = mid(p1.緯度, p2.緯度);
+  res.経度 = mid(p1.経度, p2.経度);
+  return res;
+};
+
+let bklayer = [];
+const clearLayer = () => {
+  bklayer.forEach(i => map.removeLayer(i));
+};
+const addLayer = (item) => {
+  map.addLayer(item);
+  bklayer.push(item);
+};
+
+const showRoute = (from) => {
+  clearLayer();
+
+  const o = route[from];
+  const fromp = getSpot(from);
+  for (const to in o) {
+    const cnt = o[to];
+    const top = getSpot(to);
+
+    //const end = calcMiddlePoint(fromp, top);
+    const end = top;
+    const polyline = L.polyline([
+      [fromp.緯度, fromp.経度],
+      [end.緯度, end.経度],
+    ], { color: "blue", weight: cnt / 50 });
+    addLayer(polyline);
+  }
+};
+
+selpos.oninput = () => showRoute(selpos.value);
+selpos.value = "38";
+selpos.oninput();
+
+const showUserRoute = (userid) => {
+  clearLayer();
+  const user = users.find(i => i.userid == userid);
+  if (!user) return;
+
+  const pos = user.pos.split(",");
+  if (pos.length == 1) return;
+  let from = pos[0];
+  const weight = 2;
+  for (let i = 1; i < pos.length; i++) {
+    const to = pos[i];
+    const fromp = getSpot(from);
+    const top = getSpot(to);
+    const polyline = L.polyline([
+      [fromp.緯度, fromp.経度],
+      [top.緯度, top.経度],
+    ], { color: "green", weight });
+    addLayer(polyline);
+    from = to;
+  }
+};
+
+seluser.oninput = () => showUserRoute(seluser.value);
+</script>
