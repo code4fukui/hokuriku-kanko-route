@@ -10,12 +10,12 @@ DATA: <a href=https://github.com/code4fukui/mac-address>金沢大学のwi-fiパ�
 <a href=https://github.com/code4fukui/hokuriku-kanko-route>src on GitHub</a>
 
 <script type="module">
-import { CSV } from "https://js.sabae.cc/CSV.js";
+import { CSV } from "https://code4fukui.github.io/CSV/CSV.js";
 import { cr } from "https://js.sabae.cc/cr.js";
 import { move2count } from "https://code4fukui.github.io/mac-address/move2count.js";
 import { showLineChart } from "./showLineChart.js";
 import { DateTime } from "https://js.sabae.cc/DateTime.js";
-import { rnd } from "https://js.sabae.cc/rnd.js";
+import { shuffle } from "https://js.sabae.cc/shuffle.js";
 
 h1.textContent = document.title;
 
@@ -33,28 +33,25 @@ for (let i = 0; i < nsel; i++) {
     op.textContent = i["エリア"] + " " + i["施設名(日本語)"];
     op.value = i["No."];
   }
-  sel.value = index[rnd(index.length)]["No."];
+  //sel.value = index[rnd(index.length)]["No."];
   sels.push(sel);
 }
+
+const btnrnd = cr("button", main);
+btnrnd.textContent = "ランダム";
 
 const div = cr("div", main);
 
 const cache = {};
 const cachedFetch = async (url) => {
   if (cache[url]) cache[url];
-  try {
-    const data = await CSV.fetchJSON(url);
-    cache[url] = data;
-    return data;
-  } catch (e) {
-    console.log(e);
-  }
-  cache[url] = null;
-  return null;
+  const data = await CSV.fetchJSON(url, null);
+  cache[url] = data;
+  return data;
 };
 
 const show = async () => {
-  div.innerHTML = "";
+  div.innerHTML = "loading...";
   const series = [];
   for (const sel of sels) {
     const no = sel.value;
@@ -62,6 +59,7 @@ const show = async () => {
     const url = base + "move/" + no + ".csv";
     const data = await cachedFetch(url);
     if (!data) continue;
+    console.log(no, data);
     const cnt = move2count(data);
     const name = index.find(i => i["No."] == no)["施設名(日本語)"];
     series.push({ name, data: cnt.map(i => ([new DateTime(i.dt).getTime(), i.cnt])) });
@@ -69,15 +67,39 @@ const show = async () => {
 
   console.log(series);
   const height = 500;
+  div.innerHTML = "";
   showLineChart(div, series, height);
 };
+
+const setRandom = () => {
+  const nos = index.map(i => i["No."]);
+  shuffle(nos);
+  for (let i = 0; i < sels.length; i++) {
+    sels[i].value = nos[i];
+  }
+};
+
+setRandom();
+
 show();
 sels.forEach(i => i.oninput = show);
 
+btnrnd.onclick = () => {
+  setRandom();
+  show();
+};
+cr("br", main);
+
 </script>
 <style>
+body {
+  font-family: sans-serif;
+}
 a {
   color: gray !important;
+}
+select, button {
+  margin-right: 0.5em;
 }
 </style>
 
