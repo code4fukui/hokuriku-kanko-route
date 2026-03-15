@@ -1,6 +1,6 @@
 # 北陸観光移動軌跡
 
-北陸インバウンド観光DX・データコンソーシアムによって公開されているオープンデータ、[金沢大学のwi-fiパケットセンシングにより取得したデータ](https://github.com/hokuriku-inbound-kanko/mac-address)を、[変換](https://github.com/code4fukui/mac-address)し、可視化したものです。
+北陸インバウンド観光DX・データコンソーシアムによって公開されているオープンデータ、[金沢大学のwi-fiパケットセンシングにより取得したデータ](https://github.com/hokuriku-inbound-kanko/mac-address)を、[変換](https://github.com/code4fukui/mac-address)し、可視化したプロジェクトです。
 
 ## デモ
 - [北陸観光移動軌跡](https://code4fukui.github.io/hokuriku-kanko-route/)

@@ -1,5 +1,7 @@
 # hokuriku-kanko-route
 
+> 日本語のREADMEはこちらです: [README.ja.md](README.ja.md)
+
 This project visualizes open data published by the Hokuriku Inbound Tourism DX Data Consortium, specifically data obtained from WiFi packet sensing by Kanazawa University, using [data conversions](https://github.com/code4fukui/mac-address).
 
 ## Demo
