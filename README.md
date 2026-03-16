@@ -18,4 +18,4 @@ This project visualizes open data published by the Hokuriku Inbound Tourism DX D
 - [TIFDATA Hokuriku Tourism Data Portal](https://tifdata.jp/)
 
 ## License
-MIT
+MIT License — see [LICENSE](LICENSE).
